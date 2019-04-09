@@ -109,11 +109,9 @@ class ViewController: UIViewController {
     // BUBBLE-TEXT
     let bubble = SCNText(string: text, extrusionDepth: CGFloat(bubbleDepth))
     if let visionImage = createVisionImage() {
-      let options = VisionCloudDetectorOptions()
-      options.maxResults = 1
-      vision.cloudLabelDetector(options: options).detect(in: visionImage) { labels, error in
-        guard error == nil, let labels = labels, !labels.isEmpty, let label = labels[0].label else { return }
-        bubble.string = label
+        vision.cloudImageLabeler().process(visionImage) { labels, error in
+        guard error == nil, let labels = labels, !labels.isEmpty else { return }
+        bubble.string = labels[0].text
       }
     }
     var font = UIFont(name: "Futura", size: 0.15)
@@ -186,9 +184,10 @@ class ViewController: UIViewController {
   func updateMLKit() {
     guard let visionImage = createVisionImage() else { return }
     let group = DispatchGroup()
-    let options = VisionLabelDetectorOptions.init(confidenceThreshold: 0.7)
+    let options = VisionOnDeviceImageLabelerOptions()
+    options.confidenceThreshold = 0.7
     group.enter()
-    vision.labelDetector().detect(in: visionImage) { features, error in
+    vision.onDeviceImageLabeler(options: options).process(visionImage) { features, error in
       defer { group.leave() }
       guard error == nil, let features = features, !features.isEmpty else {
         let errorString = error?.localizedDescription ?? "detectionNoResultsMessage"
@@ -199,7 +198,7 @@ class ViewController: UIViewController {
       // Get Classifications
       let classifications = features
         .map { feature -> String in
-          "\(feature.label) \(String(format:"- %.2f", feature.confidence))" }
+            "\(feature.text) - \(feature.confidence ?? 0)" }
         .joined(separator: "\n")
 
       DispatchQueue.main.async {
