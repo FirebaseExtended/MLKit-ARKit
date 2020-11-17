@@ -108,12 +108,12 @@ class ViewController: UIViewController {
 
     // BUBBLE-TEXT
     let bubble = SCNText(string: text, extrusionDepth: CGFloat(bubbleDepth))
-    if let visionImage = createVisionImage() {
-        vision.cloudImageLabeler().process(visionImage) { labels, error in
+    let visionImage = VisionImage.init(image: sceneView.snapshot())
+    vision.cloudImageLabeler().process(visionImage) { labels, error in
         guard error == nil, let labels = labels, !labels.isEmpty else { return }
         bubble.string = labels[0].text
-      }
     }
+    
     var font = UIFont(name: "Futura", size: 0.15)
     font = font?.withTraits(traits: .traitBold)
     bubble.font = font
