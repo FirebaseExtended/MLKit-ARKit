@@ -108,12 +108,12 @@ class ViewController: UIViewController {
 
     // BUBBLE-TEXT
     let bubble = SCNText(string: text, extrusionDepth: CGFloat(bubbleDepth))
-    if let visionImage = createVisionImage() {
-        vision.cloudImageLabeler().process(visionImage) { labels, error in
+    let visionImage = VisionImage.init(image: sceneView.snapshot())
+    vision.cloudImageLabeler().process(visionImage) { labels, error in
         guard error == nil, let labels = labels, !labels.isEmpty else { return }
         bubble.string = labels[0].text
-      }
     }
+    
     var font = UIFont(name: "Futura", size: 0.15)
     font = font?.withTraits(traits: .traitBold)
     bubble.font = font
@@ -159,30 +159,8 @@ class ViewController: UIViewController {
     }
   }
 
-  private func createVisionImage() -> VisionImage? {
-    guard let pixbuff : CVPixelBuffer? = sceneView.session.currentFrame?.capturedImage else {
-      return nil
-    }
-    let ciImage = CIImage(cvPixelBuffer: pixbuff!)
-
-    let context = CIContext.init(options: nil)
-
-    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-      return nil
-    }
-    let rotatedImage =
-      UIImage.init(cgImage: cgImage, scale: 1.0, orientation: .right)
-    guard let rotatedCGImage = rotatedImage.cgImage else {
-      return nil
-    }
-    let mirroredImage = UIImage.init(
-      cgImage: rotatedCGImage, scale: 1.0, orientation: .leftMirrored)
-
-    return VisionImage.init(image: mirroredImage)
-  }
-
   func updateMLKit() {
-    guard let visionImage = createVisionImage() else { return }
+    let visionImage = VisionImage.init(image: sceneView.snapshot())
     let group = DispatchGroup()
     let options = VisionOnDeviceImageLabelerOptions()
     options.confidenceThreshold = 0.7
